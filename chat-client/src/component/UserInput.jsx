@@ -1,7 +1,8 @@
 import {useState, useContext } from "react"
+
 import { UserContext } from "../context/UserContext";
 function UserInput() {
-
+    let stompClient = null;
     const userContext = useContext(UserContext);
 
     const [name, setName] = useState('');
@@ -13,6 +14,7 @@ function UserInput() {
         userContext.setUser(name);
         setName('');
     };
+
 
     return (
         <div className="container d-flex justify-content-center align-items-center mt-5">

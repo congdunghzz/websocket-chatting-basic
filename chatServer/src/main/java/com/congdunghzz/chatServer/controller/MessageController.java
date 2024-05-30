@@ -6,13 +6,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
+
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Controller;
+
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Set;
 
-@Controller
+@RestController
 @RequiredArgsConstructor
 public class MessageController {
     private final SimpMessagingTemplate messagingTemplate;
@@ -34,23 +37,23 @@ public class MessageController {
 
     @MessageMapping("/user/add")
     @SendTo("/topic/public")
-    public String addUser(@Payload String user){
-        if(userService.addUser(user)){
+    public Message addUser(@Payload Message message){
+        System.out.println(message);
+        if(!userService.addUser(message.getSenderId())){
             return null;
         }
-        return user;
+        return message;
     }
 
-
-    @MessageMapping("/user/remove")
+    @MessageMapping("/user/disconnect")
     @SendTo("/topic/public")
-    public String removeUser(@Payload String user){
-        userService.removeUSer(user);
-        return user;
+    public Message disconnect(@Payload Message message){
+        userService.removeUSer(message.getSenderId());
+        return message;
     }
 
     @GetMapping("/user")
-    public List<String> getUsers(){
+    public Set<String> getUsers(){
         return userService.getUserList();
     }
 }
