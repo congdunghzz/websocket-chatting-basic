@@ -57,15 +57,13 @@ function Chat() {
     };
     const onReceivePublicMessage = (payload) => {
         const data = JSON.parse(payload.body);
-        console.log(data.status);
         switch (data.status) {
             case 'JOIN':
+                setUserList(prevList => [...prevList, data.senderId]);
                 break;
             case 'CHAT':
-                console.log('renderring ...');
-                publicChat.push(data);
-                setPublicChat([...publicChat]);
-                console.log(publicChat);
+                setPublicChat(prevPublicChat => [...prevPublicChat, data]);
+
                 break;
             case 'LEAVE':
                 break;
@@ -101,7 +99,7 @@ function Chat() {
         }else{
             return ;
         }
-    }, []);
+    }, [isConnected]);
 
     useEffect(() => {
         if (!userContext.user) {
@@ -111,11 +109,21 @@ function Chat() {
         setUsername(userContext.user);
         setIsConnected(true);
     }, [userContext.user]);
+
     useEffect(() => {
         if (isConnected) {
             handleConnect();
-        } else return;
-    }, [username]);
+        }
+        return () => {
+            if (stompClient) {
+                stompClient.disconnect(() => {
+                    console.log("Disconnected");
+                });
+            }
+        };
+    }, [username, isConnected]);
+    
+    
     return (
         <>
             {
@@ -125,7 +133,7 @@ function Chat() {
                     <div className="container my-5 ">
                         <div className=" main-content">
                             <div className="row d-flex w-100 justify-content-center h-100">
-                                <div className="col-3 bg-info-subtle px-0">
+                                <div className="col-3 bg-info-subtle px-0 chat-bar">
                                     <div className="list-group w-100">
                                         <button type="button"
                                             className={`${('Public Room' !== tab || !tab) && 'list-group-item list-group-item-info'} btn btn-info`} aria-current="true"
@@ -145,6 +153,7 @@ function Chat() {
                                     </div>
                                 </div>
                                 <div className="chat-box col-9 position-relative py-3">
+                                    <div className="mb-3 chat-content">
                                     {
                                         publicChat.length !== 0 &&
                                         (
@@ -167,7 +176,7 @@ function Chat() {
                                                                 <li key={index} className="mb-4 d-flex ">
                                                                     <div className="avatar rounded-circle bg-success d-flex justify-content-center align-items-center"
                                                                     >
-                                                                        <h5 className="text-light ">A</h5>
+                                                                        <h5 className="text-light ">{chat.senderId.charAt(0)}</h5>
                                                                     </div>
                                                                     <div className="message-content bg-light ms-3 p-3" lh-sm>
                                                                         {chat.content}
@@ -181,7 +190,8 @@ function Chat() {
                                             </ul>
                                         )
                                     }
-                                    <div className="input-group mt-5 mb-3 w-75 position-absolute bottom-0 start-50 translate-middle-x ">
+                                    </div>
+                                    <div className="input-group mt-5 mb-3 px-5 position-absolute bottom-0 start-50 translate-middle-x ">
                                         <input type="text" className="form-control"
                                             placeholder="message"
                                             aria-label="Recipient's username" aria-describedby="basic-addon2"

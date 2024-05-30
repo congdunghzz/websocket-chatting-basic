@@ -5,6 +5,12 @@
 .chat-box{
     background-color: rgb(221, 225, 227);
     border-radius: 16px;
+    height: 100%;
+}
+.chat-content{
+    padding-right: 0;
+    height: 100%;
+    overflow: auto;
 }
 .avatar{
     height: 32px;
@@ -21,4 +27,7 @@
 .message-content{
     max-width: 50%;
     border-radius: 16px;
+}
+.chat-bar{
+    border-radius: 25px;
 }
