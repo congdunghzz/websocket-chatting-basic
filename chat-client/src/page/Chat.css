@@ -1,0 +1,24 @@
+
+.main-content{
+    height: 600px;
+}
+.chat-box{
+    background-color: rgb(221, 225, 227);
+    border-radius: 16px;
+}
+.avatar{
+    height: 32px;
+    width: 32px;
+}
+
+.message-list li{
+    list-style-type: none;
+}
+
+.avatar h5{
+    line-height: 32px;
+}
+.message-content{
+    max-width: 50%;
+    border-radius: 16px;
+}
