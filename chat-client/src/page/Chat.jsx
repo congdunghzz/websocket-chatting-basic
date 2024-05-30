@@ -41,7 +41,7 @@ function Chat() {
 
     }
     const onConnect = () => {
-        stompClient.subscribe('/topic/public', onReceivePublicMessage);
+        stompClient.subscribe('/chatroom/public', onReceivePublicMessage);
         stompClient.subscribe(`/user/${username}/queue/update`, onReceivePrivateMessage);
         const message = {
             senderId: username,
@@ -57,13 +57,15 @@ function Chat() {
     };
     const onReceivePublicMessage = (payload) => {
         const data = JSON.parse(payload.body);
-        console.log(data);
-        switch (payload.status) {
+        console.log(data.status);
+        switch (data.status) {
             case 'JOIN':
                 break;
             case 'CHAT':
-                publicChat.push(payload);
+                console.log('renderring ...');
+                publicChat.push(data);
                 setPublicChat([...publicChat]);
+                console.log(publicChat);
                 break;
             case 'LEAVE':
                 break;
@@ -80,9 +82,7 @@ function Chat() {
     }
 
     const handleSendMessage = () => {
-        console.log(stompClient === null);
         if (stompClient) {
-            console.log("send");
             const payload = {
                 senderId: username,
                 recipientId: '',
@@ -115,12 +115,12 @@ function Chat() {
         if (isConnected) {
             handleConnect();
         } else return;
-    }, []);
+    }, [username]);
     return (
         <>
             {
                 !isConnected ?
-                    <UserInput />
+                    <UserInput  />
                     :
                     <div className="container my-5 ">
                         <div className=" main-content">

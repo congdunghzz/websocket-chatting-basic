@@ -22,7 +22,7 @@ public class MessageController {
     private final UserService userService;
 
     @MessageMapping("/chat/all")
-    @SendTo("/topic/public")
+    @SendTo("/chatroom/public")
     public Message sendToPublic(@Payload Message message){
         return message;
     }
@@ -36,9 +36,9 @@ public class MessageController {
     }
 
     @MessageMapping("/user/add")
-    @SendTo("/topic/public")
+    @SendTo("/chatroom/public")
     public Message addUser(@Payload Message message){
-        System.out.println(message);
+
         if(!userService.addUser(message.getSenderId())){
             return null;
         }
@@ -46,7 +46,7 @@ public class MessageController {
     }
 
     @MessageMapping("/user/disconnect")
-    @SendTo("/topic/public")
+    @SendTo("/chatroom/public")
     public Message disconnect(@Payload Message message){
         userService.removeUSer(message.getSenderId());
         return message;
