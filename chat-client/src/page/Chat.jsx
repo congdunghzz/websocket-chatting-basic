@@ -20,6 +20,8 @@ function Chat() {
 
     const [publicChat, setPublicChat] = useState([]);
 
+    const [privateChat, setPrivateChat] = useState(new Map());
+
     const [userList, setUserList] = useState([]);
     const handleTagChange = (current) => {
         setTab(current);
@@ -32,7 +34,7 @@ function Chat() {
         }
         return color;
     }
-  
+
 
     const handleConnect = () => {
         var sockJS = new SockJS(BaseUrl + '/ws');
@@ -63,13 +65,20 @@ function Chat() {
                 break;
             case 'CHAT':
                 setPublicChat(prevPublicChat => [...prevPublicChat, data]);
-
                 break;
             case 'LEAVE':
                 break;
         }
     };
     const onReceivePrivateMessage = (payload) => {
+        const data = JSON.parse(payload.body);
+        if (privateChat.get(data.senderId)) {
+            privateChat.get(data.senderId).push(data);
+            setPrivateChat(new Map(privateChat));
+        } else {
+            privateChat.set(data.senderId, [data]);
+            setPrivateChat(new Map(privateChat));
+        }
 
     };
 
@@ -80,24 +89,47 @@ function Chat() {
     }
 
     const handleSendMessage = () => {
-        if (stompClient) {
-            const payload = {
-                senderId: username,
-                recipientId: '',
-                content: message,
-                status: 'CHAT'
+        if (tab === 'Public Room') {
+            if (stompClient) {
+                const payload = {
+                    senderId: username,
+                    recipientId: '',
+                    content: message,
+                    status: 'CHAT'
+                }
+                stompClient.send('/app/chat/all', {}, JSON.stringify(payload))
+
+                setMessage('')
             }
-            stompClient.send('/app/chat/all', {}, JSON.stringify(payload))
-            
-            setMessage('')
+        } else if (!tab) {
+            return;
+        } else {
+            if (stompClient) {
+                const payload = {
+                    senderId: username,
+                    recipientId: tab,
+                    content: message,
+                    status: 'CHAT'
+                }
+                stompClient.send('/app/chat/user', {}, JSON.stringify(payload))
+                if (payload.senderId !== payload.recipientId) {
+                    if (privateChat.get(payload.recipientId)) {
+                        privateChat.get(payload.recipientId).push(payload);
+                        setPrivateChat(new Map(privateChat));
+                    } else {
+                        privateChat.set(payload.recipientId, [payload]);
+                        setPrivateChat(new Map(privateChat));
+                    }
+                }
+                setMessage('')
+            }
         }
     }
-
     useEffect(() => {
         if (isConnected) {
             getUser()
-        }else{
-            return ;
+        } else {
+            return;
         }
     }, [isConnected]);
 
@@ -122,13 +154,13 @@ function Chat() {
             }
         };
     }, [username, isConnected]);
-    
-    
+
+
     return (
         <>
             {
                 !isConnected ?
-                    <UserInput  />
+                    <UserInput />
                     :
                     <div className="container my-5 ">
                         <div className=" main-content">
@@ -154,42 +186,76 @@ function Chat() {
                                 </div>
                                 <div className="chat-box col-9 position-relative py-3">
                                     <div className="mb-3 chat-content">
-                                    {
-                                        publicChat.length !== 0 &&
-                                        (
-                                            <ul className="message-list px-1 mb-5">
-                                                {
-                                                    publicChat.map((chat, index) => {
-                                                        if (username === chat?.senderId) {
-                                                            return (
-                                                                <li key={index} className="mb-4 d-flex justify-content-end">
-                                                                    <div className="message-content bg-info-subtle me-3 p-3" lh-sm>
-                                                                        {chat.content}
-                                                                    </div>
-                                                                    <div className="avatar rounded-circle bg-success d-flex justify-content-center align-items-center">
-                                                                        <h5 className="text-light ">{username.charAt(0)}</h5>
-                                                                    </div>
-                                                                </li>
-                                                            )
-                                                        } else {
-                                                            return (
-                                                                <li key={index} className="mb-4 d-flex ">
-                                                                    <div className="avatar rounded-circle bg-success d-flex justify-content-center align-items-center"
-                                                                    >
-                                                                        <h5 className="text-light ">{chat.senderId.charAt(0)}</h5>
-                                                                    </div>
-                                                                    <div className="message-content bg-light ms-3 p-3" lh-sm>
-                                                                        {chat.content}
-                                                                    </div>
-                                                                </li>
-                                                            )
+                                        {
+                                            (tab === 'Public Room') ?
+                                                (
+                                                    <ul className="message-list px-1 mb-5">
+                                                        {
+                                                            publicChat.map((chat, index) => {
+                                                                if (username === chat?.senderId) {
+                                                                    return (
+                                                                        <li key={index} className="mb-4 d-flex justify-content-end">
+                                                                            <div className="message-content bg-info-subtle me-3 p-3" lh-sm>
+                                                                                {chat.content}
+                                                                            </div>
+                                                                            <div className="avatar rounded-circle bg-success d-flex justify-content-center align-items-center">
+                                                                                <h5 className="text-light ">{username.charAt(0)}</h5>
+                                                                            </div>
+                                                                        </li>
+                                                                    )
+                                                                } else {
+                                                                    return (
+                                                                        <li key={index} className="mb-4 d-flex ">
+                                                                            <div className="avatar rounded-circle bg-success d-flex justify-content-center align-items-center"
+                                                                            >
+                                                                                <h5 className="text-light ">{chat.senderId.charAt(0)}</h5>
+                                                                            </div>
+                                                                            <div className="message-content bg-light ms-3 p-3" lh-sm>
+                                                                                {chat.content}
+                                                                            </div>
+                                                                        </li>
+                                                                    )
+                                                                }
+                                                            })
                                                         }
-                                                    })
-                                                }
 
-                                            </ul>
-                                        )
-                                    }
+                                                    </ul>
+                                                )
+                                                :
+                                                (
+                                                    <ul className="message-list px-1 mb-5">
+                                                        {
+                                                            privateChat.get(tab)?.map((chat, index) => {
+                                                                if (username === chat?.senderId) {
+                                                                    return (
+                                                                        <li key={index} className="mb-4 d-flex justify-content-end">
+                                                                            <div className="message-content bg-info-subtle me-3 p-3" lh-sm>
+                                                                                {chat.content}
+                                                                            </div>
+                                                                            <div className="avatar rounded-circle bg-success d-flex justify-content-center align-items-center">
+                                                                                <h5 className="text-light ">{username.charAt(0)}</h5>
+                                                                            </div>
+                                                                        </li>
+                                                                    )
+                                                                } else {
+                                                                    return (
+                                                                        <li key={index} className="mb-4 d-flex ">
+                                                                            <div className="avatar rounded-circle bg-success d-flex justify-content-center align-items-center"
+                                                                            >
+                                                                                <h5 className="text-light ">{chat.senderId.charAt(0)}</h5>
+                                                                            </div>
+                                                                            <div className="message-content bg-light ms-3 p-3" lh-sm>
+                                                                                {chat.content}
+                                                                            </div>
+                                                                        </li>
+                                                                    )
+                                                                }
+                                                            })
+                                                        }
+
+                                                    </ul>
+                                                )
+                                        }
                                     </div>
                                     <div className="input-group mt-5 mb-3 px-5 position-absolute bottom-0 start-50 translate-middle-x ">
                                         <input type="text" className="form-control"
