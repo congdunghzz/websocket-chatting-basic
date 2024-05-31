@@ -117,7 +117,9 @@ function Chat() {
                         privateChat.get(payload.recipientId).push(payload);
                         setPrivateChat(new Map(privateChat));
                     } else {
-                        privateChat.set(payload.recipientId, [payload]);
+                        const list = [];
+                        list.push(payload);
+                        privateChat.set(payload.recipientId, list);
                         setPrivateChat(new Map(privateChat));
                     }
                 }
